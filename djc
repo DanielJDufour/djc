@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+import argparse
+from os.path import abspath, join
+from os import walk
+from subprocess import check_output
+
+def find_manage_py(dirpath):
+    for root, dirs, files in walk(dirpath):
+        for file in files:
+            if file == 'manage.py':
+                return abspath(join(root, file))
+
+def create_user(project, username, email, password, debug=False):
+    if debug: print("starting create_user with", project, username, email, password)
+
+    filepath = find_manage_py(project)
+    if debug: print("filepath:", filepath)
+
+    if not filepath:
+        raise Exception("unable to find manage.py file")
+
+    command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user('{username}','{email}','{password}')" | python3 {filepath} shell"""
+    if debug: print("running:", command)
+
+    output = check_output(command, shell=True)
+
+    if debug: print("output:", output)
+    if debug: print("created " + username)
+
+if __name__ == "__main__":
+    # execute only if run as a script
+    parser = argparse.ArgumentParser()
+    parser.add_argument('create-user')
+    parser.add_argument('-d', '--debug', choices=["", "true", "TRUE", "True"])
+    parser.add_argument('-s', '--settings')
+    parser.add_argument('-u', '--username')
+    parser.add_argument('-e', '--email')
+    parser.add_argument('-pw', '--password')
+    parser.add_argument('-prj', '--project')
+    args = parser.parse_args()
+    print("args:", args)
+
+    if "create-user" in args:
+         create_user(
+            username=args.username,
+            email=args.email,
+            password=args.password,
+            project=args.project,
+            debug = args.debug in ["", "true", "TRUE", "True"]
+         )
