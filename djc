@@ -5,8 +5,27 @@ from os.path import abspath, join
 from os import walk
 from subprocess import check_output
 
-def find_manage_py(dirpath):
-    for root, dirs, files in walk(dirpath):
+TRUES = ["", "true", "TRUE", "True"]
+
+# taken from simple-env for portability
+def trim(value):
+    SINGLE_QUOTE = "'"
+    DOUBLE_QUOTE = '"'
+
+    if value is None: return
+
+    for i in range(2):
+        # remove excessive ' quoting
+        if value.startswith(SINGLE_QUOTE) and value.endswith(SINGLE_QUOTE):
+            value = value.strip(SINGLE_QUOTE)
+
+        # remove excessive " quoting
+        if value.startswith(DOUBLE_QUOTE) and value.endswith(DOUBLE_QUOTE):
+            value = value.strip(DOUBLE_QUOTE)
+    return value
+
+def find_manage_py(dirpath='.'):
+    for root, dirs, files in walk(dirpath or '.'):
         for file in files:
             if file == 'manage.py':
                 return abspath(join(root, file))
@@ -32,7 +51,7 @@ if __name__ == "__main__":
     # execute only if run as a script
     parser = argparse.ArgumentParser()
     parser.add_argument('create-user')
-    parser.add_argument('-d', '--debug', choices=["", "true", "TRUE", "True"])
+    parser.add_argument('-d', '--debug', choices=TRUES)
     parser.add_argument('-s', '--settings')
     parser.add_argument('-u', '--username')
     parser.add_argument('-e', '--email')
@@ -41,11 +60,18 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print("args:", args)
 
+    if args.username is None:
+        raise Exception("[djc] no username given")
+
+    if args.email is None:
+        raise Exception("[djc] no email given")
+
+
     if "create-user" in args:
          create_user(
-            username=args.username,
-            email=args.email,
-            password=args.password,
-            project=args.project,
-            debug = args.debug in ["", "true", "TRUE", "True"]
+            username=trim(args.username),
+            email=trim(args.email),
+            password=trim(args.password),
+            project=trim(args.project),
+            debug = trim(args.debug) in TRUES
          )

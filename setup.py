@@ -9,7 +9,7 @@ with open(join(root_dir, "README.md")) as f:
 setup(
     name = 'djc',
     scripts=['djc'],
-    version = '0.0.0',
+    version = '0.1.0',
     description = 'Command Line Interface for Django with Nifty Scripts',
     long_description=long_description,
     long_description_content_type="text/markdown",
