@@ -7,3 +7,11 @@ Install djc in the same environment as your Django project
 ```bash
 djc create-user --project="$PWD/test/mysite" --username="daniel" --email="example@gmail.com" --password="password" --debug="true"
 ```
+## makemigrations
+```bash
+djc makemigrations
+```
+## run migrations
+```bash
+djc migrate
+```
