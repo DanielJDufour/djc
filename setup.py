@@ -13,7 +13,7 @@ long_description = sub(":[a-z]+:", "- ", long_description)
 setup(
     name = 'djc',
     scripts=['djc'],
-    version = '0.3.0',
+    version = '0.4.0',
     description = 'Command Line Interface for Django with Nifty Scripts',
     long_description=long_description,
     long_description_content_type="text/markdown",

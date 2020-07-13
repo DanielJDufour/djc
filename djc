@@ -30,7 +30,13 @@ def find_files(target, dirpath="."):
 
 def exc(cmd, pipfile):
     if pipfile:
-        cmd = f'''cd {dirname(pipfile)} && pipenv run sh -c "{cmd}"'''
+        cmd = (
+            "cd "
+            + dirname(pipfile)
+            + ' && pipenv run sh -c "'
+            + cmd.replace('"', '\\"')
+            + '"'
+        )
     print(f"running {cmd}")
     return check_output(cmd, shell=True)
 
@@ -46,11 +52,11 @@ def migrate(manage_py, pipfile):
 def run(manage_py, pipfile, filepath):
     print(
         exc(
-            '''echo 'exec(open(\\"'''
+            '''echo 'exec(open("'''
             + filepath
-            + """\\").read(), {})' | python3 """
+            + """").read(), {})' | python3 """
             + manage_py
-            + """ shell""",
+            + " shell",
             pipfile,
         )
     )
@@ -66,7 +72,7 @@ def create_user(manage_py, username, email, password, pipfile, debug=False):
     if email is None:
         raise Exception("[djc] no email given")
 
-    command = f"""echo \\"from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_user('''{username}''','''{email}''','''{password}'''))\\" | python3 {manage_py} shell"""
+    command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_user('''{username}''','''{email}''','''{password}'''))" | python3 {manage_py} shell"""
     if debug:
         print("running:", command)
 
