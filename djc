@@ -1,48 +1,55 @@
 #!/usr/bin/env python3
 
 import argparse
-from os.path import abspath, join
-from os import walk
+import csv
+from os.path import abspath, dirname, join
+from os import getcwd, walk
+from shear import shear
 from subprocess import check_output
 
 TRUES = ["", "true", "TRUE", "True"]
 
-# taken from simple-env for portability
-def trim(value):
-    SINGLE_QUOTE = "'"
-    DOUBLE_QUOTE = '"'
+def find_file(target, dirpath='.'):
+    return find_files(target, dirpath)[0]
 
-    if value is None: return
-
-    for i in range(2):
-        # remove excessive ' quoting
-        if value.startswith(SINGLE_QUOTE) and value.endswith(SINGLE_QUOTE):
-            value = value.strip(SINGLE_QUOTE)
-
-        # remove excessive " quoting
-        if value.startswith(DOUBLE_QUOTE) and value.endswith(DOUBLE_QUOTE):
-            value = value.strip(DOUBLE_QUOTE)
-    return value
-
-def find_manage_py(dirpath='.'):
+def find_files(target, dirpath='.'):
+    found_files = []
     for root, dirs, files in walk(dirpath or '.'):
-        for file in files:
-            if file == 'manage.py':
-                return abspath(join(root, file))
+        for filename in files:
+            if filename == target:
+                filepath = abspath(join(root, filename))
+                # skip hidden files
+                if not "./" in filepath:
+                    found_files.append(filepath)
+    return found_files
 
-def create_user(project, username, email, password, debug=False):
+def exc(cmd, pipfile):
+    if pipfile: cmd = f'''cd {dirname(pipfile)} && pipenv run sh -c "{cmd}"'''
+    print(f"running {cmd}")
+    return check_output(cmd, shell=True)
+
+def makemigrations(manage_py, pipfile):
+    print(exc(f"python3 {manage_py} makemigrations", pipfile))
+
+def migrate(manage_py, pipfile):
+    print(exc(f"python3 {manage_py} migrate", pipfile))
+
+def run(manage_py, pipfile, filepath):
+    print(exc('''echo 'exec(open(\\"''' + filepath + '''\\").read(), {})' | python3 ''' + manage_py + ''' shell''', pipfile))
+
+def create_user(manage_py, username, email, password, pipfile, debug=False):
     if debug: print("starting create_user with", project, username, email, password)
 
-    filepath = find_manage_py(project)
-    if debug: print("filepath:", filepath)
+    if username is None:
+        raise Exception("[djc] no username given")
 
-    if not filepath:
-        raise Exception("unable to find manage.py file")
+    if email is None:
+        raise Exception("[djc] no email given")
 
-    command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_user('{username}','{email}','{password}')" | python3 {filepath} shell"""
+    command = f"""echo \\"from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_user('''{username}''','''{email}''','''{password}'''))\\" | python3 {manage_py} shell"""
     if debug: print("running:", command)
 
-    output = check_output(command, shell=True)
+    output = exc(command, pipfile)
 
     if debug: print("output:", output)
     if debug: print("created " + username)
@@ -50,8 +57,9 @@ def create_user(project, username, email, password, debug=False):
 if __name__ == "__main__":
     # execute only if run as a script
     parser = argparse.ArgumentParser()
-    parser.add_argument('create-user')
+    parser.add_argument('subcommand')
     parser.add_argument('-d', '--debug', choices=TRUES)
+    parser.add_argument('-f', '--filepath')
     parser.add_argument('-s', '--settings')
     parser.add_argument('-u', '--username')
     parser.add_argument('-e', '--email')
@@ -60,18 +68,48 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print("args:", args)
 
-    if args.username is None:
-        raise Exception("[djc] no username given")
+    # if you don't pass in a project path
+    # it assumes you are inside a project
+    if args.project is None: project = getcwd()
 
-    if args.email is None:
-        raise Exception("[djc] no email given")
+    project = shear(project)
 
+    manage_py = find_file("manage.py", project)
+    print("found manage.py at", manage_py)
 
-    if "create-user" in args:
+    models = find_files("models.py", project)
+    for model in models: print("found model.py at", model)
+
+    pipfile = find_file("Pipfile", project)
+    print("found Pipfile at", pipfile)
+
+    if not manage_py:
+        raise Exception("unable to find manage.py")
+
+    subcommand = args.subcommand
+
+    if subcommand == "create-user":
          create_user(
-            username=trim(args.username),
-            email=trim(args.email),
-            password=trim(args.password),
-            project=trim(args.project),
-            debug = trim(args.debug) in TRUES
-         )
+            username=shear(args.username),
+            email=shear(args.email),
+            password=shear(args.password),
+            manage_py=manage_py,
+            debug=shear(args.debug) in TRUES,
+            pipfile=pipfile
+        )
+    elif subcommand == "makemigrations":
+        makemigrations(
+            manage_py=manage_py,
+            pipfile=pipfile
+        )
+    elif subcommand == "migrate":
+        migrate(
+            manage_py=manage_py,
+            pipfile=pipfile
+        )
+    elif subcommand == "run":
+        run(
+            manage_py=manage_py,
+            pipfile=pipfile,
+            filepath=shear(args.filepath)            
+        )
