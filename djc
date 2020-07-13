@@ -11,7 +11,9 @@ TRUES = ["", "true", "TRUE", "True"]
 
 
 def find_file(target, dirpath="."):
-    return find_files(target, dirpath)[0]
+    found_files = find_files(target, dirpath)
+    if len(found_files) > 0:
+        return found_files[0]
 
 
 def find_files(target, dirpath="."):
