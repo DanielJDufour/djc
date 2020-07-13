@@ -107,7 +107,7 @@ def create_superuser(
         if email is None:
             raise Exception("[djc] no email given")
 
-        command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); if not User.objects.filter(username='''{username}''').exists() and not User.objects.filter(email='''{email}''').exists(): User.objects.create_superuser('''{username}''','''{email}''','''{password}'''))" | python3 {manage_py} shell"""
+        command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_superuser('''{username}''','''{email}''','''{password}'''))" | python3 {manage_py} shell"""
         if debug:
             print("running:", command)
 
