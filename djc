@@ -66,26 +66,62 @@ def run(manage_py, pipfile, filepath):
     )
 
 
-def create_user(manage_py, username, email, password, pipfile, debug=False):
-    if debug:
-        print("starting create_user with", project, username, email, password)
+def create_user(manage_py, username, email, password, pipfile, debug=False, safe=False):
+    try:
+        if debug:
+            print("starting create_user with", project, username, email, password)
 
-    if username is None:
-        raise Exception("[djc] no username given")
+        if username is None:
+            raise Exception("[djc] no username given")
 
-    if email is None:
-        raise Exception("[djc] no email given")
+        if email is None:
+            raise Exception("[djc] no email given")
 
-    command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_user('''{username}''','''{email}''','''{password}'''))" | python3 {manage_py} shell"""
-    if debug:
-        print("running:", command)
+        command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_user('''{username}''','''{email}''','''{password}'''))" | python3 {manage_py} shell"""
+        if debug:
+            print("running:", command)
 
-    output = exc(command, pipfile)
+        output = exc(command, pipfile)
 
-    if debug:
-        print("output:", output)
-    if debug:
-        print("created " + username)
+        if debug:
+            print("output:", output)
+        if debug:
+            print("created " + username)
+    except Exception as e:
+        if safe:
+            print(e)
+        else:
+            raise e
+
+
+def create_superuser(
+    manage_py, username, email, password, pipfile, debug=False, safe=False
+):
+    try:
+        if debug:
+            print("starting create_superuser with", project, username, email, password)
+
+        if username is None:
+            raise Exception("[djc] no username given")
+
+        if email is None:
+            raise Exception("[djc] no email given")
+
+        command = f"""echo "from django.contrib.auth import get_user_model; User = get_user_model(); if not User.objects.filter(username='''{username}''').exists() and not User.objects.filter(email='''{email}''').exists(): User.objects.create_superuser('''{username}''','''{email}''','''{password}'''))" | python3 {manage_py} shell"""
+        if debug:
+            print("running:", command)
+
+        output = exc(command, pipfile)
+
+        if debug:
+            print("output:", output)
+        if debug:
+            print("created " + username)
+    except Exception as e:
+        if safe:
+            print(e)
+        else:
+            raise e
 
 
 if __name__ == "__main__":
@@ -94,6 +130,7 @@ if __name__ == "__main__":
     parser.add_argument("subcommand")
     parser.add_argument("-d", "--debug", choices=TRUES)
     parser.add_argument("-f", "--filepath")
+    parser.add_argument("--safe")
     parser.add_argument("-s", "--settings")
     parser.add_argument("-u", "--username")
     parser.add_argument("-e", "--email")
@@ -132,6 +169,17 @@ if __name__ == "__main__":
             manage_py=manage_py,
             debug=shear(args.debug) in TRUES,
             pipfile=pipfile,
+            safe=shear(args.safe) in TRUES,
+        )
+    elif subcommand == "create-superuser" or subcommand == "create-super-user":
+        create_superuser(
+            username=shear(args.username),
+            email=shear(args.email),
+            password=shear(args.password),
+            manage_py=manage_py,
+            debug=shear(args.debug) in TRUES,
+            pipfile=pipfile,
+            safe=shear(args.safe) in TRUES,
         )
     elif subcommand == "makemigrations":
         makemigrations(manage_py=manage_py, pipfile=pipfile)

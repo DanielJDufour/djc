@@ -5,9 +5,11 @@
 Install djc in the same environment as your Django project
 
 ## create a new user
+Setting safe to true, makes it so the command doesn't exit with an error code if the user already exists
 ```bash
-djc create-user --username="daniel" --email="example@gmail.com" --password="password" --debug="true"
+djc create-user --username="daniel" --email="example@gmail.com" --password="password" --debug="true" --safe="true"
 ```
+You can also run `djc create-superuser` which takes the same flags and arguments.
 
 ## run a file within the Django environment
 ```bash
