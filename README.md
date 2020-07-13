@@ -27,3 +27,9 @@ djc makemigrations
 ```bash
 djc migrate
 ```
+
+## collect static files
+This command automatically answers any questions with yes.
+``bash
+djc collecstatic
+```

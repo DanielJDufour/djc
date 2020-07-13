@@ -12,4 +12,4 @@ rm -f $dirpath/test/mysite/db.sqlite3
 ./djc migrate
 ./djc create-user --username="daniel" --email="example@gmail.com" --password="password" --debug="true"
 ./djc run --filepath test/exc_test.py
-
+./djc collecstatic
