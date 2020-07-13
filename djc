@@ -9,12 +9,14 @@ from subprocess import check_output
 
 TRUES = ["", "true", "TRUE", "True"]
 
-def find_file(target, dirpath='.'):
+
+def find_file(target, dirpath="."):
     return find_files(target, dirpath)[0]
 
-def find_files(target, dirpath='.'):
+
+def find_files(target, dirpath="."):
     found_files = []
-    for root, dirs, files in walk(dirpath or '.'):
+    for root, dirs, files in walk(dirpath or "."):
         for filename in files:
             if filename == target:
                 filepath = abspath(join(root, filename))
@@ -23,22 +25,38 @@ def find_files(target, dirpath='.'):
                     found_files.append(filepath)
     return found_files
 
+
 def exc(cmd, pipfile):
-    if pipfile: cmd = f'''cd {dirname(pipfile)} && pipenv run sh -c "{cmd}"'''
+    if pipfile:
+        cmd = f'''cd {dirname(pipfile)} && pipenv run sh -c "{cmd}"'''
     print(f"running {cmd}")
     return check_output(cmd, shell=True)
+
 
 def makemigrations(manage_py, pipfile):
     print(exc(f"python3 {manage_py} makemigrations", pipfile))
 
+
 def migrate(manage_py, pipfile):
     print(exc(f"python3 {manage_py} migrate", pipfile))
 
+
 def run(manage_py, pipfile, filepath):
-    print(exc('''echo 'exec(open(\\"''' + filepath + '''\\").read(), {})' | python3 ''' + manage_py + ''' shell''', pipfile))
+    print(
+        exc(
+            '''echo 'exec(open(\\"'''
+            + filepath
+            + """\\").read(), {})' | python3 """
+            + manage_py
+            + """ shell""",
+            pipfile,
+        )
+    )
+
 
 def create_user(manage_py, username, email, password, pipfile, debug=False):
-    if debug: print("starting create_user with", project, username, email, password)
+    if debug:
+        print("starting create_user with", project, username, email, password)
 
     if username is None:
         raise Exception("[djc] no username given")
@@ -47,30 +65,35 @@ def create_user(manage_py, username, email, password, pipfile, debug=False):
         raise Exception("[djc] no email given")
 
     command = f"""echo \\"from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.create_user('''{username}''','''{email}''','''{password}'''))\\" | python3 {manage_py} shell"""
-    if debug: print("running:", command)
+    if debug:
+        print("running:", command)
 
     output = exc(command, pipfile)
 
-    if debug: print("output:", output)
-    if debug: print("created " + username)
+    if debug:
+        print("output:", output)
+    if debug:
+        print("created " + username)
+
 
 if __name__ == "__main__":
     # execute only if run as a script
     parser = argparse.ArgumentParser()
-    parser.add_argument('subcommand')
-    parser.add_argument('-d', '--debug', choices=TRUES)
-    parser.add_argument('-f', '--filepath')
-    parser.add_argument('-s', '--settings')
-    parser.add_argument('-u', '--username')
-    parser.add_argument('-e', '--email')
-    parser.add_argument('-pw', '--password')
-    parser.add_argument('-prj', '--project')
+    parser.add_argument("subcommand")
+    parser.add_argument("-d", "--debug", choices=TRUES)
+    parser.add_argument("-f", "--filepath")
+    parser.add_argument("-s", "--settings")
+    parser.add_argument("-u", "--username")
+    parser.add_argument("-e", "--email")
+    parser.add_argument("-pw", "--password")
+    parser.add_argument("-prj", "--project")
     args = parser.parse_args()
     print("args:", args)
 
     # if you don't pass in a project path
     # it assumes you are inside a project
-    if args.project is None: project = getcwd()
+    if args.project is None:
+        project = getcwd()
 
     project = shear(project)
 
@@ -78,7 +101,8 @@ if __name__ == "__main__":
     print("found manage.py at", manage_py)
 
     models = find_files("models.py", project)
-    for model in models: print("found model.py at", model)
+    for model in models:
+        print("found model.py at", model)
 
     pipfile = find_file("Pipfile", project)
     print("found Pipfile at", pipfile)
@@ -89,27 +113,17 @@ if __name__ == "__main__":
     subcommand = args.subcommand
 
     if subcommand == "create-user":
-         create_user(
+        create_user(
             username=shear(args.username),
             email=shear(args.email),
             password=shear(args.password),
             manage_py=manage_py,
             debug=shear(args.debug) in TRUES,
-            pipfile=pipfile
+            pipfile=pipfile,
         )
     elif subcommand == "makemigrations":
-        makemigrations(
-            manage_py=manage_py,
-            pipfile=pipfile
-        )
+        makemigrations(manage_py=manage_py, pipfile=pipfile)
     elif subcommand == "migrate":
-        migrate(
-            manage_py=manage_py,
-            pipfile=pipfile
-        )
+        migrate(manage_py=manage_py, pipfile=pipfile)
     elif subcommand == "run":
-        run(
-            manage_py=manage_py,
-            pipfile=pipfile,
-            filepath=shear(args.filepath)            
-        )
+        run(manage_py=manage_py, pipfile=pipfile, filepath=shear(args.filepath))
