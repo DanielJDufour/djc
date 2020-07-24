@@ -141,8 +141,7 @@ if __name__ == "__main__":
 
     # if you don't pass in a project path
     # it assumes you are inside a project
-    if args.project is None:
-        project = getcwd()
+    project = args.project if args.project else getcwd()
 
     project = shear(project)
 
